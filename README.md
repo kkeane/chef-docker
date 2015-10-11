@@ -15,7 +15,7 @@ aufs.
 
 Requirements
 ------------
-- Chef 12.4 or higher
+- Chef 12.4 or higher. Chef 11 is NOT SUPPORTED, please do not open issues about it.
 - Ruby 2.1 or higher (preferably, the Chef full-stack installer)
 - Network accessible web server hosting the docker binary.
 - SELinux permissive/disabled if CentOS [Docker Issue #15498](https://github.com/docker/docker/issues/15498)
@@ -125,7 +125,7 @@ docker_container 'my_nginx' do
   repo 'nginx'
   tag 'latest'
   port '80:80'
-  hostname 'www'
+  host_name 'www'
   domain_name 'computers.biz'
   env 'FOO=bar'
   binds [ '/some/local/files/:/etc/nginx/conf.d' ]
@@ -176,13 +176,14 @@ section below for more information.
 
 #### Example
 ```ruby
-docker_service 'tls_test:2376' do
+docker_service_systemd 'tls_test:2376' do
   host ["tcp://#{node['ipaddress']}:2376", 'unix:///var/run/docker.sock']
-  tlscacert '/path/to/ca.pem'
-  tlscert '/path/to/server.pem'
-  tlskey '/path/to/serverkey.pem'
-  tlsverify true
-  provider Chef::Provider::DockerService::Systemd
+  tls_verify true
+  tls_ca_cert '/path/to/ca.pem'
+  tls_server_cert '/path/to/server.pem'
+  tls_server_key '/path/to/server-key.pem'
+  tls_client_cert '/path/to/client.pem'
+  tls_client_key '/path/to/client-key.pem'
   action [:create, :start]
 end
 ```
@@ -237,12 +238,14 @@ the options found in the
 - `registry_mirror` - Preferred Docker registry mirror
 - `storage_driver` - Storage driver to use
 - `selinux_enabled` - Enable selinux support
-- `storage_opt` - Set storage driver options
+- `storage_opts` - Set storage driver options
 - `tls` - Use TLS; implied by --tlsverify
-- `tlscacert` - Trust certs signed only by this CA
-- `tlscert` - Path to TLS certificate file
-- `tlskey` - Path to TLS key file
-- `tlsverify` - Use TLS and verify the remote
+- `tls_verify` - Use TLS and verify the remote
+- `tls_ca_cert` - Trust certs signed only by this CA
+- `tls_server_cert` - Path to TLS certificate file for docker service
+- `tls_server_key` - Path to TLS key file for docker service
+- `tls_client_cert` - Path to TLS certificate file for docker cli
+- `tls_client_key` - Path to TLS key file for docker cli
 - `default_ulimit` - Set default ulimit settings for containers
 - `http_proxy` - ENV variable set before for Docker daemon starts
 - `https_proxy` - ENV variable set before for Docker daemon starts
@@ -258,19 +261,16 @@ the options found in the
 - `:stop` - Stops the service
 - `:restart` - Restarts the service
 
-#### Providers
-- `Chef::Provider::DockerService::Execute` - The simplest provider. Just
-  starts a process. Fire and forget.
+#### `docker_service` implementations
+- `docker_service_execute` - The simplest docker_service. Just starts a process.
+  Fire and forget.
 
-- `Chef::Provider::DockerService::Sysvinit` - Uses a SystemV init script
-  to manage the service state.
+- `docker_service_sysvinit` - Uses a SystemV init script to manage the service state.
 
-- `Chef::Provider::DockerService::Upstart` - Uses an Upstart script to
-  manage the service state.
+- `docker_service_upstart` - Uses an Upstart script to manage the service state.
 
-- `Chef::Provider::DockerService::Systemd` - Uses an Systemd unit file to
-  manage the service state. NOTE: This does NOT enable systemd socket
-  activation.
+- `docker_service_systemd` - Uses an Systemd unit file to manage the service
+  state. NOTE: This does NOT enable systemd socket activation.
 
 ## docker_image
 The `docker_image` is responsible for managing Docker image pulls,
@@ -376,6 +376,15 @@ docker_image 'my.computers.biz:5043/someara/hello-again' do
 end
 ```
 
+Connect to an external docker daemon and pull an image
+
+```ruby
+docker_image 'alpine' do
+  host 'tcp://127.0.0.1:2376'
+  tag '2.7'
+end
+```
+
 #### Properties
 The `docker_image` resource properties mostly corresponds to the
 [Docker Remote API](https://docs.docker.com/reference/api/docker_remote_api_v1.20/#2-2-images)
@@ -411,6 +420,8 @@ registry vs a private one.
   (default behavior) - Defaults to `true`
 - `read_timeout` - May need to increase for long image builds/pulls
 - `write_timeout` - May need to increase for long image builds/pulls
+- `host` - A string containing the host the API should communicate with.
+  Defaults to local `docker_service`.
 
 #### Actions
 The following actions are available for a `docker_image` resource.
@@ -823,6 +834,16 @@ docker_container 'syslogger' do
 end
 ```
 
+Connect to an external docker daemon and create a container
+
+```ruby
+docker_container 'external_daemon' do
+  repo 'alpine'
+  host 'tcp://1.2.3.4:2376'
+  action :create
+end
+```
+
 #### Properties
 
 Most `docker_container` properties are the `snake_case` version of the
@@ -863,6 +884,8 @@ Most `docker_container` properties are the `snake_case` version of the
   `/etc/hosts` in the form `['host_a:10.9.8.7', 'host_b:10.9.8.6']`
 - `force` - A boolean to use in container operations that support a
   `force` option. Defaults to `false`
+- `host` - A string containing the host the API should communicate with.
+  Defaults to local `docker_service`.
 - `host_name` - The hostname for the container.
 - `links` - An array of source container/alias pairs to link the
   container to in the form `[container_a:www', container_b:db']`

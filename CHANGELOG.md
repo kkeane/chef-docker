@@ -1,3 +1,57 @@
+v2.0.0
+--------------------
+- Converted resources from LWRP to Chef 12.5 Custom Resources
+- Added dependency on compat_resource cookbook, works back to 12.0.0
+- Various fixes around sysvinit scripts in docker_service
+- Total backwards compatibility with recipes written for chef-docker 1.x
+
+v1.0.49
+--------------------
+- Handling NilClass error on docker_image default creds handling
+
+v1.0.48
+--------------------
+- Adding a 20 try timeout to the docker_wait_ready block
+
+v1.0.47
+--------------------
+- #484 - Fall back to creds for index.docker.io on image pull
+
+v1.0.46
+--------------------
+- #438 - Adding per-resource host property to docker_image and
+   docker_container
+
+v1.0.45
+--------------------
+- Allow :redeploy on missing containers
+- TLS fixes
+- Updating sysvinit script to use docker_opts
+
+v1.0.44
+--------------------
+- Adding Label support for docker_container
+
+v1.0.43
+--------------------
+- Switching docker_service sysvinit provider from ::Insserv to ::Debian
+
+v1.0.42
+--------------------
+- Fix for docker_service to allow setting icc to false
+- Get chefspec happy on latest nightly chefdk again
+- Accepting both String and Array for default_ulimit
+
+v1.0.41
+--------------------
+- Refactoring broken sysvinit scripts
+- #421 - Adding docker-wait-ready blocks
+- Discovered TLS verification is broken. Disabling for now.
+
+v1.0.40
+--------------------
+- Fixing broken Chef::Provider::DockerService::Execute
+
 v1.0.39
 --------------------
 - Various fixes around sysvinit
@@ -41,7 +95,7 @@ v1.0.31
 v1.0.30
 --------------------
 - #427 - Qualify port bindings with protocol even when implicitly tcp.
-- #443 - Added docker_container log_driver and log_opts attributes. 
+- #443 - Added docker_container log_driver and log_opts attributes.
 - Changing docker_image read_timeout default to 60
 - Misc cleanup for README and Gemfile
 
@@ -236,7 +290,7 @@ v0.40.0  (2015-06-29)
 Important changes with this release:
 
 * MAJOR INTERFACE CHANGE
-* Recipes replaced with docker_service resource* 
+* Recipes replaced with docker_service resource*
 * Removing a ton of dependencies
 * Storage backends, kernel module loading, etc should now be handled externally
 * Updating for Docker 1.6.2
